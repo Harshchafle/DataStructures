@@ -1,3 +1,13 @@
+/* This program contains different Methods like 
+    * To print 2D Array in Horizontal Snake             -->     makeSnake(int[][] arr)
+    * To print 2D Array in Vertical Snake               -->     makeVertical(int []][arr)
+    * To make Transpose of Matrix                       -->     makeTranspose(int [][]arr)
+    * To Print 2D Array in Spiral Order                 -->     spiralMatrix(int [][]arr)
+    * To multiply two Matrix                            -->     multiply(int [][]arr1,int [][]arr2)
+    * To search a element in 2D Array by Binary Search  -->     binarySearch(int [][]arr, int target)
+    * To print 2D Array                                 -->     printMatrix(int [][]arr)
+*/
+
 public class SnakeMartix {
 
     // Horizontal
@@ -118,8 +128,10 @@ public class SnakeMartix {
     //----------------------------------------------------------------
 
     // Method to find target in matrix by binary Search in 2d Array
-    // leetcode 240
     public static boolean binarySearch(int arr[][], int target){
+
+        // Below commented lines are also the correct method and uncommented also correct method
+        
         // int row = arr.length;
         // int col = arr[0].length;
         // int left = 0, right = row*col-1;
@@ -191,6 +203,9 @@ public class SnakeMartix {
     }
 
     public static void main(String[] args) {
+
+        // Make the Appropriate Main Method according To you
+        
         int arr[][] = {{1,3,5,9},{2,8,10,11},{4,12,14,15},{6,13,16,19,}};
         // int arr1[][] = { { 1, 2, 3}, { 4, 5, 6}};
         // int arr2[][] = { { 1, 2}, { 4, 5}, { 3, 1}};
