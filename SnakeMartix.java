@@ -216,6 +216,7 @@ public class SnakeMartix {
         // printMatrix(arr2);
         // multiply(arr1, arr2);
 
+        // below code about binary search
         System.out.println(binarySearch(arr, 2));
         
     }
