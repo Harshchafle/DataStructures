@@ -68,32 +68,49 @@ public class SnakeMartix {
         int btm = arr.length-1;
         int left = 0;
         int right = arr.length-1;
+        int count = 0;
 
-        while(top < btm ){
+        while(count <= arr.length*arr[0].length){
 
             // traverse top row (left -> right)
             for(int i=left; i<=right; i++){
                 System.out.println(arr[top][i]);
+                count++;
             }
             top++;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
 
             // traversing right (top -> btm)
             for(int i=top; i<=btm; i++){
                 System.out.println(arr[i][right]);
+                count++;
             }
             right--;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
 
             // traversing btm row (right -> left)
             for(int i=right; i>=left; i--){
                 System.out.println(arr[btm][i]);
+                count++;
             }
             btm--;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
 
             // traverse left (btm -> top)
-            for(int i=btm; i<=top; i++){
+            for(int i=btm; i>=top; i--){
                 System.out.println(arr[i][left]);
+                count++;
             }
             left++;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
         }
         return arr;
     }
@@ -103,7 +120,7 @@ public class SnakeMartix {
     // Matrix Multiplication
     public static int[][] multiply(int [][]arr1, int [][]arr2){
         int r1 = arr1.length-1;
-        int c1 = arr1[0].length-1;
+        // int c1 = arr1[0].length-1;
         int r2 = arr2.length-1;
         int c2 = arr2[0].length-1;
         int mul[][] = new int[r1][r2];
@@ -174,30 +191,49 @@ public class SnakeMartix {
         int btm = arr.length - 1;
         int left = 0;
         int right = arr.length - 1;
+        int count =0;
 
-        while(){
-
+        while(count <= arr.length*arr[0].length){
+            
             // traverse left col (top -> btm)
             for(int i=top; i>btm; i++){
                 System.out.println(arr[i][top]);
+                count++;
             }
             btm--;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
 
             // traverse btm row (left -> right)
             for(int i=left; i>right; i--){
                 System.out.println(arr[btm][i]);
+                count++;
+            }
+            right--;
+            if(count == arr.length*arr[0].length){
+                break;
             }
 
             // traverse right col (btm -> top)
             for(int i=btm; i>top; i--){
                 System.out.println(arr[btm][i]);
+                count++;
+            }
+            top++;
+            if(count == arr.length*arr[0].length){
+                break;
             }
 
             // traverse top row (rigth -> left)
             for(int i=top; i>btm; i++){
                 System.out.println(arr[i][top]);
+                count++;
             }
             btm--;
+            if(count == arr.length*arr[0].length){
+                break;
+            }
         }
         
     }
@@ -206,7 +242,12 @@ public class SnakeMartix {
 
         // Make the Appropriate Main Method according To you
         
-        int arr[][] = {{1,3,5,9},{2,8,10,11},{4,12,14,15},{6,13,16,19,}};
+        int arr[][] = { {1, 3, 5, 9, 3},
+                        {2, 8,10,11, 5},
+                        {4,12,14,15, 6},
+                        {6,13,16,19, 8},
+                        {3, 4,45, 3, 2}
+                    };
         // int arr1[][] = { { 1, 2, 3}, { 4, 5, 6}};
         // int arr2[][] = { { 1, 2}, { 4, 5}, { 3, 1}};
         // makeSnake(arr);
@@ -215,8 +256,9 @@ public class SnakeMartix {
         // printMatrix(arr1);
         // printMatrix(arr2);
         // multiply(arr1, arr2);
-
-        System.out.println(binarySearch(arr, 2));
+        // below code about binary search
+        // System.out.println(binarySearch(arr, 2));
+        spiralMatrix(arr);
         
     }
 }
