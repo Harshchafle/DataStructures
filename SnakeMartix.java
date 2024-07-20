@@ -67,7 +67,7 @@ public class SnakeMartix {
         int top = 0;
         int btm = arr.length-1;
         int left = 0;
-        int right = arr.length-1;
+        int right = arr[0].length-1;
         int count = 0;
 
         while(count <= arr.length*arr[0].length){
