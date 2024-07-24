@@ -1,4 +1,3 @@
-package Recursion;
 
 /**
  * Factorial

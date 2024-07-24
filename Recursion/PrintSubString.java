@@ -1,4 +1,3 @@
-package Recursion;
 
 class PrintSubString{
     //method to get SubString

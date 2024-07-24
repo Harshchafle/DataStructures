@@ -1,4 +1,3 @@
-package Recursion;
 
 public class ExpPow {
     // Method to calculate power of e = 2.718

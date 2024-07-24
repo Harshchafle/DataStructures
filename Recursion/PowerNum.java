@@ -1,4 +1,3 @@
-package Recursion;
 
 public class PowerNum {
     // Method to calculate power of a number

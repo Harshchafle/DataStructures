@@ -1,4 +1,3 @@
-package Recursion;
 
 public class FiboNum {
     // Method to get nth finonacci number
