@@ -7,6 +7,6 @@ public class ExpPow {
     }
 
     public static void main(String[] args) {
-        System.out.println("e^"+n+" : "+expPow(2));
+        System.out.println("e^"+2+" : "+expPow(2));
     }
 }
