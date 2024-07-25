@@ -14,6 +14,6 @@ public class StringPermutation {
 
     // Main Method
     public static void main(String[] args) {
-        printPermutation("harsh", "", 0);
+        printPermutation("ABC", "", 0);
     }
 }
