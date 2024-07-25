@@ -13,8 +13,7 @@ public class StringPermutation {
     }
 
     // Main Method
-    public static void Main(String []args){
+    public static void main(String[] args) {
         printPermutation("harsh", "", 0);
-
     }
 }
