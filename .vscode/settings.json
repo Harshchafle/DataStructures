@@ -1,8 +1,9 @@
 {
     "java.debug.settings.onBuildFailureProceed": true,
     "java.project.sourcePaths": [
+        "SortingDAC.java",
         "Recursion",
         "Backtracking",
-        "SortingDAC.java"
+        "LinkedList"
     ]
 }
