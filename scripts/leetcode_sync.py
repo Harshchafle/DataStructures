@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
@@ -65,16 +66,49 @@ class LeetCodeSync:
             driver.get('https://leetcode.com/accounts/login/')
             print("📄 Loaded login page")
             
-            # Wait for login form
+            # Wait for login form - try multiple selectors
             print("⏳ Waiting for login form...")
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.NAME, 'login'))
-            )
-            print("✅ Login form found")
             
-            # Fill login form
-            username_field = driver.find_element(By.NAME, 'login')
-            password_field = driver.find_element(By.NAME, 'password')
+            username_field = None
+            password_field = None
+            
+            # Try different selectors for username field
+            username_selectors = [
+                'input[name="login"]',
+                'input[name="username"]', 
+                'input[type="email"]',
+                'input[placeholder*="username"]',
+                'input[placeholder*="email"]'
+            ]
+            
+            for selector in username_selectors:
+                try:
+                    WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    username_field = driver.find_element(By.CSS_SELECTOR, selector)
+                    print(f"✅ Found username field with: {selector}")
+                    break
+                except:
+                    continue
+            
+            # Try different selectors for password field
+            password_selectors = [
+                'input[name="password"]',
+                'input[type="password"]'
+            ]
+            
+            for selector in password_selectors:
+                try:
+                    password_field = driver.find_element(By.CSS_SELECTOR, selector)
+                    print(f"✅ Found password field with: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not username_field or not password_field:
+                print("❌ Could not find login form fields")
+                return False
             
             username_field.clear()
             username_field.send_keys(self.username)
@@ -84,10 +118,46 @@ class LeetCodeSync:
             
             print("📝 Filled login credentials")
             
-            # Submit form
-            login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
-            login_button.click()
-            print("🚀 Submitted login form")
+            # Add a small delay before clicking submit
+            time.sleep(1)
+            
+            # Submit form - try multiple selectors for submit button
+            print("🔍 Looking for submit button...")
+            submit_selectors = [
+                '//button[@type="submit"]',
+                '//button[contains(text(), "Sign In")]',
+                '//button[contains(text(), "Log In")]',
+                '//button[contains(@class, "btn-login")]',
+                '//input[@type="submit"]',
+                'button[data-cy="sign-in-btn"]',
+                '.btn-signin',
+                '.signin-btn'
+            ]
+            
+            login_button = None
+            for selector in submit_selectors:
+                try:
+                    if selector.startswith('//'):
+                        login_button = driver.find_element(By.XPATH, selector)
+                    else:
+                        login_button = driver.find_element(By.CSS_SELECTOR, selector)
+                    print(f"✅ Found submit button with: {selector}")
+                    break
+                except:
+                    continue
+            
+            if not login_button:
+                print("❌ Could not find submit button, trying Enter key...")
+                # Fallback: use Enter key on password field
+                try:
+                    password_field.send_keys(Keys.RETURN)
+                    print("🚀 Submitted using Enter key")
+                except:
+                    print("❌ Enter key method also failed")
+                    return False
+            else:
+                login_button.click()
+                print("🚀 Submitted login form")
             
             # Wait for redirect - more flexible wait
             print("⏳ Waiting for login redirect...")
