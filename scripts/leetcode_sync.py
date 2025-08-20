@@ -77,7 +77,7 @@ class LeetCodeSync:
                 'input[name="login"]',
                 'input[name="username"]', 
                 'input[type="email"]',
-                'input[placeholder*="Username or E-mail"]',
+                'input[placeholder*="username"]',
                 'input[placeholder*="email"]'
             ]
             
@@ -157,7 +157,7 @@ class LeetCodeSync:
             
             # Wait for either successful login or error message
             print("⏳ Waiting for login redirect or error message...")
-            # time.sleep(5)
+            time.sleep(5)
             
             # Check for error message
             error_selectors = [
