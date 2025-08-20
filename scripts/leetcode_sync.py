@@ -83,7 +83,7 @@ class LeetCodeSync:
             
             for selector in username_selectors:
                 try:
-                    WebDriverWait(driver, 5).until(
+                    WebDriverWait(driver, 8).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, selector))
                     )
                     username_field = driver.find_element(By.CSS_SELECTOR, selector)
@@ -92,7 +92,6 @@ class LeetCodeSync:
                 except:
                     continue
             
-            # Try different selectors for password field
             password_selectors = [
                 'input[name="password"]',
                 'input[type="password"]'
@@ -117,11 +116,8 @@ class LeetCodeSync:
             password_field.send_keys(self.password)
             
             print("📝 Filled login credentials")
-            
-            # Add a small delay before clicking submit
             time.sleep(1)
             
-            # Submit form - try multiple selectors for submit button
             print("🔍 Looking for submit button...")
             submit_selectors = [
                 '//button[@type="submit"]',
@@ -148,7 +144,6 @@ class LeetCodeSync:
             
             if not login_button:
                 print("❌ Could not find submit button, trying Enter key...")
-                # Fallback: use Enter key on password field
                 try:
                     password_field.send_keys(Keys.RETURN)
                     print("🚀 Submitted using Enter key")
@@ -156,23 +151,41 @@ class LeetCodeSync:
                     print("❌ Enter key method also failed")
                     return False
             else:
-                login_button.click()
+                # Use JS click for reliability
+                driver.execute_script("arguments[0].click();", login_button)
                 print("🚀 Submitted login form")
             
-            # Wait for redirect - more flexible wait
-            print("⏳ Waiting for login redirect...")
-            time.sleep(5)  # Give some time for redirect
+            # Wait for either successful login or error message
+            print("⏳ Waiting for login redirect or error message...")
+            time.sleep(5)
             
+            # Check for error message
+            error_selectors = [
+                'div[class*="error"]',
+                '.error-message',
+                'div[role="alert"]'
+            ]
+            for err_selector in error_selectors:
+                elems = driver.find_elements(By.CSS_SELECTOR, err_selector)
+                if elems:
+                    error_text = elems[0].text
+                    if error_text.strip():
+                        print(f"❌ Login error message: {error_text}")
+                        return False
+
             current_url = driver.current_url
             print(f"📍 Current URL after login: {current_url}")
             
-            # Check if login was successful
-            if 'login' in current_url or 'signin' in current_url:
-                print("❌ Login appears to have failed - still on login page")
+            # Try to detect if logged in by presence of user avatar or dashboard
+            try:
+                WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "img.avatar, div[data-cy='user-info']"))
+                )
+                print("✅ Successfully logged in to LeetCode (user info detected)")
+                return True
+            except TimeoutException:
+                print("❌ Login appears to have failed - still on login page or missing user info")
                 return False
-            
-            print("✅ Successfully logged in to LeetCode")
-            return True
             
         except TimeoutException as e:
             print(f"⏰ Login timeout: {e}")
