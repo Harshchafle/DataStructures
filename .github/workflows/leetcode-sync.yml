@@ -3,8 +3,8 @@ name: LeetCode Solution Sync
 
 on:
   schedule:
-    # Run every 1 minutes
-    - cron:  '*/1 * * * *'
+    # Run every 1 minute for testing (change back to */30 later)
+    - cron: '*/1 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -21,20 +21,63 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
+        
+    - name: Debug - Check secrets
+      run: |
+        echo "Checking if secrets are loaded..."
+        if [ -z "$LEETCODE_USERNAME" ]; then
+          echo "❌ LEETCODE_USERNAME is empty or not set"
+        else
+          echo "✅ LEETCODE_USERNAME is set (length: ${#LEETCODE_USERNAME})"
+        fi
+        
+        if [ -z "$LEETCODE_PASSWORD" ]; then
+          echo "❌ LEETCODE_PASSWORD is empty or not set"
+        else
+          echo "✅ LEETCODE_PASSWORD is set (length: ${#LEETCODE_PASSWORD})"
+        fi
+      env:
+        LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME }}
+        LEETCODE_PASSWORD: ${{ secrets.LEETCODE_PASSWORD }}
     
     - name: Install dependencies
       run: |
+        echo "Installing Python dependencies..."
         pip install requests beautifulsoup4 selenium webdriver-manager
+        echo "Dependencies installed successfully"
     
     - name: Setup Chrome
-      uses: browser-actions/setup-chrome@latest
+      uses: browser-actions/setup-chrome@v1
+      
+    - name: Debug - Check Chrome installation
+      run: |
+        echo "Chrome version:"
+        google-chrome --version
+        echo "Chrome driver setup..."
+        
+    - name: Create required directories
+      run: |
+        echo "Creating required directories..."
+        mkdir -p leetcode-solutions
+        mkdir -p metadata
+        ls -la
     
-    - name: Run LeetCode sync script
+    - name: Run LeetCode sync script with debug
       env:
         LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME }}
         LEETCODE_PASSWORD: ${{ secrets.LEETCODE_PASSWORD }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: python scripts/leetcode_sync.py
+      run: |
+        echo "Starting LeetCode sync script..."
+        python scripts/leetcode_sync.py || echo "Script failed with exit code $?"
+        echo "Script execution completed"
+        
+    - name: Debug - Check created files
+      run: |
+        echo "Checking for created files..."
+        ls -la leetcode-solutions/ || echo "No leetcode-solutions directory"
+        ls -la metadata/ || echo "No metadata directory" 
+        find . -name "*.py" -o -name "*.java" -o -name "*.cpp" 2>/dev/null || echo "No solution files found"
     
     - name: Commit and push changes
       run: |
@@ -44,6 +87,8 @@ jobs:
         if git diff --staged --quiet; then
           echo "No changes to commit"
         else
+          echo "Changes detected, committing..."
           git commit -m "Add new LeetCode solutions [automated]"
           git push
+          echo "Changes pushed successfully"
         fi

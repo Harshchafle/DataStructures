@@ -11,8 +11,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.common.exceptions import TimeoutException, WebDriverException
 import re
+import sys
 
 class LeetCodeSync:
     def __init__(self):
@@ -20,129 +22,282 @@ class LeetCodeSync:
         self.password = os.environ.get('LEETCODE_PASSWORD')
         self.base_dir = 'leetcode-solutions'
         self.metadata_file = 'metadata/submissions.json'
-        self.session = requests.Session()
+        
+        print(f"🔐 Username loaded: {'✅' if self.username else '❌'}")
+        print(f"🔐 Password loaded: {'✅' if self.password else '❌'}")
+        
+        if not self.username or not self.password:
+            print("❌ Missing credentials! Check your GitHub secrets.")
+            sys.exit(1)
         
         # Ensure directories exist
         os.makedirs(self.base_dir, exist_ok=True)
         os.makedirs('metadata', exist_ok=True)
+        print(f"📁 Created directories: {self.base_dir}, metadata")
         
     def setup_driver(self):
         """Setup Chrome driver with headless options"""
+        print("🚀 Setting up Chrome driver...")
+        
         chrome_options = Options()
         chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
         
-        driver = webdriver.Chrome(
-            ChromeDriverManager().install(),
-            options=chrome_options
-        )
-        return driver
+        try:
+            # Try to use system Chrome
+            driver = webdriver.Chrome(options=chrome_options)
+            print("✅ Chrome driver setup successful")
+            return driver
+        except Exception as e:
+            print(f"❌ Chrome driver setup failed: {e}")
+            raise
     
     def login_leetcode(self, driver):
         """Login to LeetCode"""
+        print("🔑 Attempting to login to LeetCode...")
+        
         try:
             driver.get('https://leetcode.com/accounts/login/')
+            print("📄 Loaded login page")
             
             # Wait for login form
-            WebDriverWait(driver, 10).until(
+            print("⏳ Waiting for login form...")
+            WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.NAME, 'login'))
             )
+            print("✅ Login form found")
             
             # Fill login form
             username_field = driver.find_element(By.NAME, 'login')
             password_field = driver.find_element(By.NAME, 'password')
             
+            username_field.clear()
             username_field.send_keys(self.username)
+            
+            password_field.clear()
             password_field.send_keys(self.password)
+            
+            print("📝 Filled login credentials")
             
             # Submit form
             login_button = driver.find_element(By.XPATH, '//button[@type="submit"]')
             login_button.click()
+            print("🚀 Submitted login form")
             
-            # Wait for redirect to dashboard
-            WebDriverWait(driver, 10).until(
-                lambda driver: 'leetcode.com' in driver.current_url and 'login' not in driver.current_url
-            )
+            # Wait for redirect - more flexible wait
+            print("⏳ Waiting for login redirect...")
+            time.sleep(5)  # Give some time for redirect
             
-            print("Successfully logged in to LeetCode")
+            current_url = driver.current_url
+            print(f"📍 Current URL after login: {current_url}")
+            
+            # Check if login was successful
+            if 'login' in current_url or 'signin' in current_url:
+                print("❌ Login appears to have failed - still on login page")
+                return False
+            
+            print("✅ Successfully logged in to LeetCode")
             return True
             
+        except TimeoutException as e:
+            print(f"⏰ Login timeout: {e}")
+            return False
         except Exception as e:
-            print(f"Failed to login: {e}")
+            print(f"❌ Login failed: {e}")
             return False
     
     def get_recent_submissions(self, driver):
         """Get recent accepted submissions"""
+        print("📋 Fetching recent submissions...")
+        
         try:
             # Navigate to submissions page
             driver.get('https://leetcode.com/submissions/')
+            print("📄 Loaded submissions page")
             
-            # Wait for submissions to load
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, '[data-cy="submission-item"]'))
-            )
+            # Wait for submissions to load - try multiple selectors
+            print("⏳ Waiting for submissions to load...")
             
-            submissions = []
-            submission_elements = driver.find_elements(By.CSS_SELECTOR, '[data-cy="submission-item"]')
+            # Try different possible selectors
+            selectors = [
+                '[data-cy="submission-item"]',
+                '.submission-row',
+                '.ReactVirtualized__Table__row',
+                'tbody tr'
+            ]
             
-            for element in submission_elements[:10]:  # Get last 10 submissions
+            submission_elements = []
+            for selector in selectors:
                 try:
-                    status = element.find_element(By.CSS_SELECTOR, '[data-cy="submission-status"]').text
-                    if 'Accepted' in status:
-                        title_element = element.find_element(By.CSS_SELECTOR, '[data-cy="submission-title"] a')
-                        problem_title = title_element.text
-                        problem_url = title_element.get_attribute('href')
-                        
-                        timestamp_element = element.find_element(By.CSS_SELECTOR, '[data-cy="submission-time"]')
-                        timestamp = timestamp_element.text
-                        
-                        submissions.append({
-                            'title': problem_title,
-                            'url': problem_url,
-                            'timestamp': timestamp,
-                            'status': 'Accepted'
-                        })
-                except Exception as e:
-                    print(f"Error parsing submission: {e}")
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    submission_elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                    if submission_elements:
+                        print(f"✅ Found submissions using selector: {selector}")
+                        break
+                except TimeoutException:
                     continue
             
+            if not submission_elements:
+                print("❌ No submissions found with any selector")
+                return []
+            
+            submissions = []
+            print(f"🔍 Processing {len(submission_elements)} submission elements...")
+            
+            for i, element in enumerate(submission_elements[:10]):  # Get last 10 submissions
+                try:
+                    print(f"Processing submission {i+1}...")
+                    
+                    # Try to get status - multiple approaches
+                    status = None
+                    status_selectors = [
+                        '[data-cy="submission-status"]',
+                        '.status-accepted',
+                        'td:nth-child(3)',
+                        '.text-green-s'
+                    ]
+                    
+                    for status_selector in status_selectors:
+                        try:
+                            status_elem = element.find_element(By.CSS_SELECTOR, status_selector)
+                            status = status_elem.text
+                            break
+                        except:
+                            continue
+                    
+                    if not status or 'Accepted' not in status:
+                        continue
+                    
+                    # Try to get problem title and URL
+                    title_element = None
+                    title_selectors = [
+                        '[data-cy="submission-title"] a',
+                        'td:nth-child(2) a',
+                        '.title-cell a'
+                    ]
+                    
+                    for title_selector in title_selectors:
+                        try:
+                            title_element = element.find_element(By.CSS_SELECTOR, title_selector)
+                            break
+                        except:
+                            continue
+                    
+                    if not title_element:
+                        print(f"⚠️ Could not find title for submission {i+1}")
+                        continue
+                    
+                    problem_title = title_element.text
+                    problem_url = title_element.get_attribute('href')
+                    
+                    # Try to get timestamp
+                    timestamp = "unknown"
+                    timestamp_selectors = [
+                        '[data-cy="submission-time"]',
+                        'td:nth-child(4)',
+                        '.time-cell'
+                    ]
+                    
+                    for timestamp_selector in timestamp_selectors:
+                        try:
+                            timestamp_element = element.find_element(By.CSS_SELECTOR, timestamp_selector)
+                            timestamp = timestamp_element.text
+                            break
+                        except:
+                            continue
+                    
+                    submissions.append({
+                        'title': problem_title,
+                        'url': problem_url,
+                        'timestamp': timestamp,
+                        'status': 'Accepted'
+                    })
+                    
+                    print(f"✅ Found accepted submission: {problem_title}")
+                    
+                except Exception as e:
+                    print(f"⚠️ Error parsing submission {i+1}: {e}")
+                    continue
+            
+            print(f"📊 Found {len(submissions)} accepted submissions")
             return submissions
             
         except Exception as e:
-            print(f"Failed to get submissions: {e}")
+            print(f"❌ Failed to get submissions: {e}")
             return []
     
     def get_submission_code(self, driver, submission_url):
         """Get the actual code from submission"""
+        print(f"📄 Getting code from: {submission_url}")
+        
         try:
             driver.get(submission_url)
             
             # Wait for code to load
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 'code'))
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'code, pre, .view-lines'))
             )
             
-            # Get the code content
-            code_element = driver.find_element(By.CSS_SELECTOR, 'code')
-            code = code_element.text
+            # Try different selectors for code
+            code_selectors = [
+                'code',
+                'pre',
+                '.view-lines',
+                '.monaco-editor .view-lines'
+            ]
             
-            # Get language from the page
-            language_element = driver.find_element(By.CSS_SELECTOR, '[data-cy="lang-select"] span')
-            language = language_element.text.lower()
+            code = None
+            for selector in code_selectors:
+                try:
+                    code_element = driver.find_element(By.CSS_SELECTOR, selector)
+                    code = code_element.text
+                    if code.strip():
+                        break
+                except:
+                    continue
             
+            if not code or not code.strip():
+                print("❌ No code content found")
+                return None, None
+            
+            # Try to get language
+            language = "unknown"
+            language_selectors = [
+                '[data-cy="lang-select"] span',
+                '.language-select',
+                '.select-language'
+            ]
+            
+            for lang_selector in language_selectors:
+                try:
+                    language_element = driver.find_element(By.CSS_SELECTOR, lang_selector)
+                    language = language_element.text.lower()
+                    break
+                except:
+                    continue
+            
+            print(f"✅ Found code in {language}")
             return code, language
             
         except Exception as e:
-            print(f"Failed to get submission code: {e}")
+            print(f"❌ Failed to get submission code: {e}")
             return None, None
     
     def load_existing_metadata(self):
         """Load existing submissions metadata"""
         if os.path.exists(self.metadata_file):
-            with open(self.metadata_file, 'r') as f:
-                return json.load(f)
+            try:
+                with open(self.metadata_file, 'r') as f:
+                    return json.load(f)
+            except:
+                return {}
         return {}
     
     def save_metadata(self, metadata):
@@ -216,22 +371,28 @@ Status: Accepted
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(header + code)
         
-        print(f"Created: {filepath}")
+        print(f"📁 Created: {filepath}")
         return filepath
     
     def sync_solutions(self):
         """Main sync function"""
-        print("Starting LeetCode sync...")
+        print("🚀 Starting LeetCode sync...")
         
-        driver = self.setup_driver()
-        
+        driver = None
         try:
+            driver = self.setup_driver()
+            
             if not self.login_leetcode(driver):
+                print("❌ Login failed, exiting")
                 return
             
             # Get recent submissions
             submissions = self.get_recent_submissions(driver)
-            print(f"Found {len(submissions)} accepted submissions")
+            print(f"📊 Found {len(submissions)} accepted submissions")
+            
+            if not submissions:
+                print("ℹ️ No accepted submissions found")
+                return
             
             # Load existing metadata
             existing_metadata = self.load_existing_metadata()
@@ -243,9 +404,10 @@ Status: Accepted
                 
                 # Skip if already processed
                 if problem_key in existing_metadata:
+                    print(f"⏭️ Skipping already processed: {submission['title']}")
                     continue
                 
-                print(f"Processing: {submission['title']}")
+                print(f"🔄 Processing: {submission['title']}")
                 
                 # Get submission code
                 code, language = self.get_submission_code(driver, submission['url'])
@@ -273,15 +435,26 @@ Status: Accepted
                     
                     # Add small delay to avoid rate limiting
                     time.sleep(2)
+                else:
+                    print(f"⚠️ Could not extract code for: {submission['title']}")
             
             # Save updated metadata
             self.save_metadata(existing_metadata)
             
-            print(f"Sync completed. Added {new_solutions} new solutions.")
+            print(f"✅ Sync completed. Added {new_solutions} new solutions.")
             
+        except Exception as e:
+            print(f"❌ Sync failed with error: {e}")
+            raise
         finally:
-            driver.quit()
+            if driver:
+                driver.quit()
+                print("🔚 Browser closed")
 
 if __name__ == "__main__":
-    sync = LeetCodeSync()
-    sync.sync_solutions()
+    try:
+        sync = LeetCodeSync()
+        sync.sync_solutions()
+    except Exception as e:
+        print(f"💥 Script failed: {e}")
+        sys.exit(1)
