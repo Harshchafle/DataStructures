@@ -41,7 +41,7 @@ class LeetCodeSync:
         print("🚀 Setting up Chrome driver...")
         
         chrome_options = Options()
-        chrome_options.add_argument('--headless')
+        # chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--disable-gpu')
@@ -77,7 +77,7 @@ class LeetCodeSync:
                 'input[name="login"]',
                 'input[name="username"]', 
                 'input[type="email"]',
-                'input[placeholder*="username"]',
+                'input[placeholder*="Username or E-mail"]',
                 'input[placeholder*="email"]'
             ]
             
@@ -157,7 +157,7 @@ class LeetCodeSync:
             
             # Wait for either successful login or error message
             print("⏳ Waiting for login redirect or error message...")
-            time.sleep(5)
+            # time.sleep(5)
             
             # Check for error message
             error_selectors = [
@@ -200,7 +200,7 @@ class LeetCodeSync:
         
         try:
             # Navigate to submissions page
-            driver.get('https://leetcode.com/submissions/')
+            driver.get('https://leetcode.com/submissions/') 
             print("📄 Loaded submissions page")
             
             # Wait for submissions to load - try multiple selectors
