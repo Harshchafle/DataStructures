@@ -1,0 +1,49 @@
+# .github/workflows/leetcode-sync.yml
+name: LeetCode Solution Sync
+
+on:
+  schedule:
+    # Run every 1 minutes
+    - cron: '*/1 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  sync-leetcode:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        pip install requests beautifulsoup4 selenium webdriver-manager
+    
+    - name: Setup Chrome
+      uses: browser-actions/setup-chrome@latest
+    
+    - name: Run LeetCode sync script
+      env:
+        LEETCODE_USERNAME: ${{ secrets.LEETCODE_USERNAME }}
+        LEETCODE_PASSWORD: ${{ secrets.LEETCODE_PASSWORD }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: python scripts/leetcode_sync.py
+    
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Add new LeetCode solutions [automated]"
+          git push
+        fi
