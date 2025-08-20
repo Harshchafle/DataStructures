@@ -4,7 +4,7 @@ name: LeetCode Solution Sync
 on:
   schedule:
     # Run every 1 minutes
-    - cron: '*/1 * * * *'
+    - cron:  '*/1 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
