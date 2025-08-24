@@ -4,7 +4,7 @@ name: LeetCode Solution Sync
 on:
   schedule:
     # Run every 1 minute for testing (change back to */30 later)
-    - cron: '*/30 * * * *'
+    - cron: '*/360 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
